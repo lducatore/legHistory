@@ -5,16 +5,17 @@ from map import Map
 
 
 class WindowWidget:
-    def __init__(self, window_size, file, window_name="Leg Map"):
+    def __init__(self, size, file, window_name="Leg Map"):
         self.file = file
         self.window_name = window_name
-        self.window_size = window_size
+        self.window_size = size
 
         self.is_moving = False
         self.edition = False
         self.current_status = -1
 
-        self.map = Map(self.file, window_size)
+        self.map = Map(self.file, self.window_size)
+
         self.new_region_name = ""
         self.seeds = []
         self.neighbours = []
@@ -54,8 +55,12 @@ class WindowWidget:
             self.is_moving = False
             self.map.set_crop_corner(x, y)
         elif event == cv2.EVENT_RBUTTONDOWN:
-            if self.current_status in [0, 2]:
+            if self.current_status == 0:
                 self.map.flood_fill(x, y)
+                self.seeds.append(self.map.get_absolute_pos(x, y))
+            elif self.current_status == 2:
+                self.map.flood_fill(x, y)
+
 
         self.update()
 
@@ -70,6 +75,7 @@ class WindowWidget:
             if key == 27:
                 # ESC key
                 self.edition = False
+                self.current_status = -1
                 print("Edition mode off")
             elif key == 13:
                 # ENTER key
@@ -102,6 +108,10 @@ class WindowWidget:
         self.neighbours = []
 
     def print_status(self):
+        """
+        Notify the user of the current status of the edition.
+        :return:
+        """
         if self.current_status == -1:
             print("Error : invalid current status : not in edition mode")
         elif self.current_status == 0:
@@ -128,6 +138,7 @@ class WindowWidget:
                 key = cv2.waitKey(0)
 
                 finish = self.manage_key(key)
+
 
 window_size = (1920, 1080)
 file_name = "cleaned.png"

@@ -83,6 +83,7 @@ class Map:
         abs_pos = self.get_absolute_pos(seed_x, seed_y)
         mask = np.zeros((self.get_img_dimensions()[1] + 2, self.get_img_dimensions()[0] + 2), np.uint8)
         cv2.floodFill(self.img, mask, (abs_pos[0], abs_pos[1]), (0, 0, 255))
+        print(mask)
 
     def get_absolute_pos(self, x, y):
         """
