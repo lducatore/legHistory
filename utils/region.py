@@ -1,6 +1,6 @@
 class Region:
 
-    def __init__(self, identifier, acronym=None, seeds=None, neighbours=None, complete_name=None):
+    def __init__(self, identifier, acronym=None, seeds=None, neighbours=None, complete_name=""):
         """
         :param identifier: unique id to identify the region. It is the role of the region manager to ensure uniqueness.
         :param acronym: 2 or 3 letters acronym that describes the region within leg.
@@ -8,6 +8,11 @@ class Region:
         :param neighbours: set of regions that border the region
         :param complete_name: complete formal name, for better readability
         """
+
+        if seeds is None:
+            seeds = []
+        if neighbours is None:
+            neighbours = []
 
         self.id = identifier
         self.tag = acronym
@@ -29,3 +34,6 @@ class Region:
     def set_tag(self, tag):
         # TODO : determine what to do if one already exist. Very dangerous method
         self.tag = tag
+
+    def get_id(self):
+        return self.id

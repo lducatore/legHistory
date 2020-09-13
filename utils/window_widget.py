@@ -11,14 +11,12 @@ class WindowWidget:
         self.window_size = size
 
         self.is_moving = False
-        self.edition = False
+        self.insertion = False
         self.current_status = -1
 
         self.map = Map(self.file, self.window_size)
 
         self.new_region_name = ""
-        self.seeds = []
-        self.neighbours = []
 
     def open_window(self):
         """
@@ -56,11 +54,9 @@ class WindowWidget:
             self.map.set_crop_corner(x, y)
         elif event == cv2.EVENT_RBUTTONDOWN:
             if self.current_status == 0:
-                self.map.flood_fill(x, y)
-                self.seeds.append(self.map.get_absolute_pos(x, y))
+                self.map.add_seed(x, y)
             elif self.current_status == 2:
                 self.map.flood_fill(x, y)
-
 
         self.update()
 
@@ -71,12 +67,12 @@ class WindowWidget:
         :return: True if the window should be closed, False otherwise
         """
 
-        if self.edition:
+        if self.insertion:
             if key == 27:
                 # ESC key
-                self.edition = False
+                self.insertion = False
                 self.current_status = -1
-                print("Edition mode off")
+                print("Insertion mode off")
             elif key == 13:
                 # ENTER key
                 self.current_status += 1
@@ -84,18 +80,19 @@ class WindowWidget:
                 self.print_status()
             elif self.current_status == 1:
                 self.new_region_name += chr(key).upper()
-                print(chr(key).upper(), end="")
+                print(self.new_region_name)
 
         else:
             if key == 27:
                 # ESC key
                 return True
             if key == ord('e'):
-                self.edition = True
-                print("Edition mode on")
+                self.insertion = True
+                print("Insertion mode on")
                 self.current_status = 0
                 self.initialize_region()
                 self.print_status()
+                self.map.regions.create_new_region()
         return False
 
     def initialize_region(self):
@@ -104,8 +101,6 @@ class WindowWidget:
         :return:
         """
         self.new_region_name = ""
-        self.seeds = []
-        self.neighbours = []
 
     def print_status(self):
         """
@@ -129,7 +124,6 @@ class WindowWidget:
             Main routine to launch the window.
             :return:
             """
-            self.map.load_img()
             self.open_window()
             cv2.setMouseCallback(self.window_name, self.click_handler)
             finish = False

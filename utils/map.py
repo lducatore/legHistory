@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from regions_manager import RegionsManager
+
 
 class Map:
 
@@ -12,6 +14,8 @@ class Map:
         self.crop_size = crop_size
         self.crop_absolute_corner = [0, 0]
         self.ref_pos = [0, 0]
+
+        self.load_img()
 
     def get_crop(self):
         """
@@ -28,14 +32,14 @@ class Map:
         :param y_max: maximal y pixel index to keep from the original image
         :return:
         """
-        img_x, img_y = self.get_img_dimensions()
+        img_x, img_y = self.get_img_size()
         x_min = max(0, x_min)
         x_max = min(img_x, x_max)
         y_min = max(0, y_min)
         y_max = min(img_y, y_max)
         self.current_crop = self.img[y_min:y_max, x_min:x_max]
 
-    def get_img_dimensions(self):
+    def get_img_size(self):
         """
         Get the dimensions of the image, in the classic order.
         :return: number of x pixels, number of y pixels
@@ -49,10 +53,12 @@ class Map:
         :raise: if the file is not loaded.
         """
         self.img = cv2.imread(self.file)
-        self.set_crop(0, self.crop_size[0], 0, self.crop_size[1])
-
         if self.img is None:
-            raise RuntimeError("Error : no image found under filename ", self.file)
+            raise RuntimeError("Error : unable to load image {0}. ", self.file)
+
+        self.set_crop(0, self.crop_size[0], 0, self.crop_size[1])
+        img_size = self.get_img_size()
+        self.regions = RegionsManager((img_size[1] + 2, img_size[0] + 2))
 
     def set_crop_corner(self, x, y):
         """
@@ -80,19 +86,19 @@ class Map:
         :param seed_y: the relative y position of the seed
         :return:
         """
-        abs_pos = self.get_absolute_pos(seed_x, seed_y)
-        mask = np.zeros((self.get_img_dimensions()[1] + 2, self.get_img_dimensions()[0] + 2), np.uint8)
+        abs_pos = self.get_absolute_pos(seed_y, seed_x)
+        mask = np.zeros((self.get_img_size()[1] + 2, self.get_img_size()[0] + 2), np.uint8)
         cv2.floodFill(self.img, mask, (abs_pos[0], abs_pos[1]), (0, 0, 255))
-        print(mask)
+        return mask
 
-    def get_absolute_pos(self, x, y):
+    def get_absolute_pos(self, y, x):
         """
         Get the position on the whole map of a pixel on the cropped map.
         :param x: the x position on the crop map
         :param y: the y position on the crop map
         :return: the position in the absolute system of coordinates
         """
-        return self.crop_absolute_corner[0] + x, self.crop_absolute_corner[1] + y
+        return np.array((self.crop_absolute_corner[0] + x, self.crop_absolute_corner[1] + y))
 
     def move_image(self, x, y):
         """
@@ -104,3 +110,15 @@ class Map:
         x_min = self.crop_absolute_corner[0] + self.ref_pos[0] - x
         y_min = self.crop_absolute_corner[1] + self.ref_pos[1] - y
         self.set_crop(x_min, x_min + self.crop_size[0], y_min, y_min + self.crop_size[1])
+
+    def add_seed(self, x, y):
+        """
+        Try to add a new seed to the current region
+        :param x: the x value on the image referential(ie y)
+        :param y: the y value on the image referential(ie x)
+        :return:
+        """
+        seed = self.get_absolute_pos(x, y)
+        if self.regions.add_seed(seed):
+            mask = self.flood_fill(x, y)
+            self.regions.update_mask(mask)
