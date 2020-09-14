@@ -37,3 +37,6 @@ class Region:
 
     def get_id(self):
         return self.id
+
+    def __str__(self):
+        return self.tag + ", " + str(self.id) + "\n"

@@ -1,5 +1,5 @@
 import cv2
-import numpy as np
+import os
 
 from map import Map
 
@@ -75,8 +75,13 @@ class WindowWidget:
                 print("Insertion mode off")
             elif key == 13:
                 # ENTER key
+                if self.current_status == 1:
+                    self.map.regions.set_tag(self.new_region_name)
+                elif self.current_status == 2:
+                    self.current_status = -1
+                    self.map.regions.register_current_region()
+                    self.initialize_region()
                 self.current_status += 1
-                self.current_status %= 3
                 self.print_status()
             elif self.current_status == 1:
                 self.new_region_name += chr(key).upper()
@@ -86,13 +91,28 @@ class WindowWidget:
             if key == 27:
                 # ESC key
                 return True
-            if key == ord('e'):
+            if key == ord('i'):
                 self.insertion = True
                 print("Insertion mode on")
                 self.current_status = 0
                 self.initialize_region()
                 self.print_status()
-                self.map.regions.create_new_region()
+            elif key in [ord('l'), ord('L')]:
+                version = find_last_history_version()
+                if version == -1:
+                    print("No history file found for loading. Aborting.")
+                else:
+                    file = "leg_history_" + str(version)
+                    print("Loading last history version under file ", file)
+                    self.map.regions.load_from_file(file)
+            elif key in [ord('s')]:
+                version = find_last_history_version()
+                file = "leg_history_" + str(version + 1)
+                print("Saving history under ", file)
+                self.map.regions.save_to_file(file)
+            elif key == ord("d"):
+                print(self.map.regions)
+
         return False
 
     def initialize_region(self):
@@ -101,6 +121,7 @@ class WindowWidget:
         :return:
         """
         self.new_region_name = ""
+        self.map.regions.create_new_region()
 
     def print_status(self):
         """
@@ -132,6 +153,21 @@ class WindowWidget:
                 key = cv2.waitKey(0)
 
                 finish = self.manage_key(key)
+
+
+def find_last_history_version():
+    """
+    Find the current version of leg history stored in the utils directory.
+    :return: -1 if none found, else the current max number
+    """
+    current_max = -1
+    for file in os.listdir(os.getcwd()):
+        if len(file) > 12 and file[:12] == "leg_history_":
+            try:
+                current_max = max(int(file[12:]), current_max)
+            except ValueError:
+                continue
+    return current_max
 
 
 window_size = (1920, 1080)

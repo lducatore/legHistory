@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 
 from region import Region
 
@@ -13,11 +14,19 @@ class RegionsManager:
         self.mask = np.zeros(mask_size, np.int8)
 
     def load_from_file(self, file):
-        pass
+        # TODO : ALL OF THIS NEED MORE SECURITY SOON
+
+        f = open(file, 'rb')
+        self.regions = pickle.load(f)
+        f.close()
 
     def save_to_file(self, file):
-        # use a pickle object ? or a .txt file to parse ? or a .py file to run ?
-        pass
+        # use a pickle object ? or a .txt file to parse ? or a .py file to run ? or json ?
+        # for now, pickle. Easier to use
+
+        f = open(file, 'wb')
+        pickle.dump(self.regions, f)
+        f.close()
 
     def generate_id(self):
         """
@@ -64,6 +73,7 @@ class RegionsManager:
         :return:
         """
         self.regions.append(self.current_region)
+        self.id_set.append(self.current_region.get_id())
         self.current_region = None
 
     def set_tag(self, tag):
@@ -89,3 +99,10 @@ class RegionsManager:
         :return:
         """
         self.mask[new_mask == 1] = self.current_region.get_id()
+
+    def __str__(self):
+        message = "Number of regions: {0}\n\n".format(len(self.id_set))
+
+        for reg in self.regions:
+            message += str(reg)
+        return message
